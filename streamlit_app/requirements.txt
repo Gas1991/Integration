@@ -4,4 +4,4 @@ pandas
 Pillow
 gridfs
 urllib3
-st-aggrid
+streamlit-aggrid
