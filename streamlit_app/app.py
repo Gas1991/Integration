@@ -70,8 +70,8 @@ def main():
                     # Filtrer les données en fonction du terme de recherche
                     df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
                 
-                # Afficher le dataframe avec la première ligne figée
-                st.dataframe(df_filtered, height=600, use_container_width=True, freeze_rows=1)
+                # Afficher le dataframe avec la première ligne figée (utiliser le layout responsive)
+                st.dataframe(df_filtered, height=600, use_container_width=True)
 
                 # Statistiques
                 if 'special_price' in df.columns:
