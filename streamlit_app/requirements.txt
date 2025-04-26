@@ -1,7 +1,7 @@
-streamlit==1.20.0
-pymongo==4.4.0
-pandas==1.5.3
-Pillow==9.5.0
-gridfs==2022.3.0
-urllib3==1.26.14
-st-aggrid==0.4.0
+streamlit
+pymongo
+pandas
+Pillow
+gridfs
+urllib3
+st-aggrid
