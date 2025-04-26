@@ -11,7 +11,7 @@ username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
-COLLECTION_NAME = 'mytek_products'  # <-- remplace par ta collection cible
+COLLECTION_NAME = 'Produits_mytek'  # <-- remplace par ta collection cible
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
 # Initialisation Streamlit
