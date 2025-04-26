@@ -1,91 +1,102 @@
 import streamlit as st
 from pymongo import MongoClient
-import urllib.parse
-import certifi
-from datetime import datetime
+import pandas as pd
+import os
+from PIL import Image
+import gridfs
+from urllib.parse import quote_plus
 
-# Configure Streamlit page
-st.set_page_config(page_title="MongoDB Connection Tester", layout="wide")
-st.title("🔍 MongoDB Atlas Connection Test")
+# Configuration sécurisée MongoDB
+username = quote_plus('ghassengharbi191')
+password = quote_plus('RLQuuAeyYH8n3icB')
+MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+MONGO_DB = 'Mytek_database'
+IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
-# Securely format the URI (already properly formatted in your case)
-uri = "mongodb+srv://ghassengharbi191:RLQuuAeyYH8n3icB@cluster0.wrzdaw1.mongodb.net/Mytek_database?retryWrites=true&w=majority&appName=Cluster0"
+# Initialisation Streamlit
+st.set_page_config(layout="wide")
+st.title("Mytek Analytics Dashboard")
 
-def test_mongodb_connection(uri):
-    """Test MongoDB connection and return results"""
-    start_time = datetime.now()
-    result = {
-        "status": "unknown",
-        "message": "",
-        "server_info": None,
-        "collections": [],
-        "duration": 0
-    }
-    
+@st.cache_resource(ttl=3600)
+def get_mongo_client():
+    """Crée une connexion MongoDB sécurisée"""
     try:
-        # Create secure connection
-        client = MongoClient(
-            uri,
-            tls=True,
-            tlsCAFile=certifi.where(),
-            connectTimeoutMS=5000,
-            serverSelectionTimeoutMS=5000
-        )
-        
-        # Test basic connection
-        server_info = client.server_info()
-        result["status"] = "success"
-        result["message"] = "✅ Successfully connected to MongoDB Atlas!"
-        result["server_info"] = {
-            "host": client.HOST,
-            "port": client.PORT,
-            "version": server_info.get("version"),
-            "ok": server_info.get("ok")
-        }
-        
-        # Test database access
-        db = client.get_database()
-        result["collections"] = db.list_collection_names()
-        
+        client = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=None)
+        client.admin.command('ping')  # Test de connexion
+        return client
     except Exception as e:
-        result["status"] = "error"
-        result["message"] = f"❌ Connection failed: {str(e)}"
-    finally:
-        result["duration"] = (datetime.now() - start_time).total_seconds()
-        if 'client' in locals():
-            client.close()
+        st.error(f"🔌 Erreur de connexion MongoDB: {str(e)}")
+        st.stop()
+
+def main():
+    # Vérification du dossier images
+    if not os.path.exists(IMAGES_DIR):
+        os.makedirs(IMAGES_DIR)
+        st.warning(f"Dossier images créé: {IMAGES_DIR}")
+
+    client = get_mongo_client()
+    db = client[MONGO_DB]
+    
+    # Interface utilisateur
+    tab1, tab2 = st.tabs(["Produits", "Images"])
+    
+    with tab1:
+        st.header("Liste des Produits")
+        try:
+            collections = db.list_collection_names()
+            selected_collection = st.selectbox("Collection", collections)
             
-    return result
+            # Options de requête
+            limit = st.number_input("Nombre max de documents", 1, 10000, 100)
+            query_filter = st.text_input("Filtre (JSON)", '{}')
+            
+            # Exécution de la requête
+            try:
+                filter_dict = eval(query_filter)  # Attention: utiliser avec précaution
+                docs = list(db[selected_collection].find(filter_dict).limit(limit))
+                
+                if docs:
+                    df = pd.json_normalize(docs)
+                    if '_id' in df.columns:
+                        df['_id'] = df['_id'].astype(str)
+                    
+                    st.dataframe(df, height=600)
+                    
+                    # Statistiques
+                    if 'special_price' in df.columns:
+                        st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
+                else:
+                    st.warning("Aucun document trouvé!")
+            except Exception as qe:
+                st.error(f"Erreur de requête: {qe}")
+                
+        except Exception as e:
+            st.error(f"Erreur MongoDB: {str(e)}")
+    
+    with tab2:
+        st.header("Gestion des Images")
+        image_option = st.radio("Source", ["Local", "GridFS"])
+        
+        if image_option == "Local":
+            try:
+                images = [f for f in os.listdir(IMAGES_DIR) if f.endswith(('.jpg', '.png'))]
+                selected_image = st.selectbox("Choisir une image", images)
+                img_path = os.path.join(IMAGES_DIR, selected_image)
+                st.image(img_path, caption=selected_image)
+            except Exception as e:
+                st.error(f"Erreur images locales: {str(e)}")
+        else:
+            try:
+                fs = gridfs.GridFS(db)
+                files = list(fs.find())
+                if files:
+                    selected_file = st.selectbox("Fichiers GridFS", [f.filename for f in files])
+                    file_data = fs.find_one({'filename': selected_file})
+                    st.image(file_data.read(), caption=selected_file)
+                else:
+                    st.warning("Aucun fichier dans GridFS")
+            except Exception as e:
+                st.error(f"Erreur GridFS: {str(e)}")
 
-# Run the test when the button is clicked
-if st.button("Test MongoDB Connection", type="primary"):
-    st.write("### Testing connection to:")
-    st.code(uri.split('@')[0] + "@...")  # Show partial URI for security
-    
-    with st.spinner("Connecting to MongoDB Atlas..."):
-        test_result = test_mongodb_connection(uri)
-    
-    # Display results
-    st.divider()
-    
-    if test_result["status"] == "success":
-        st.success(test_result["message"])
-        st.metric("Connection Time", f"{test_result['duration']:.3f} seconds")
-        
-        st.write("#### Server Information")
-        st.json(test_result["server_info"])
-        
-        st.write(f"#### Collections Found ({len(test_result['collections'])})")
-        st.write(test_result["collections"])
-    else:
-        st.error(test_result["message"])
-        
-    st.divider()
-    st.write("Connection test completed at:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-# Security note
-st.warning("""
-**Important Security Notice:**  
-This tester validates your connection but should not be deployed with your credentials. 
-For production, use environment variables or Streamlit secrets management.
-""")
+if __name__ == "__main__":
+    main()
