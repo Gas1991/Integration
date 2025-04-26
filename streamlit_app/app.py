@@ -48,6 +48,16 @@ def main():
             limit = st.number_input("Nombre max de documents", 1, 10000, 100)
             query_filter = st.text_input("Filtre (JSON)", '{}')
 
+            # Exécution de la requête
+            try:
+                filter_dict = eval(query_filter)  # Attention: à sécuriser en prod
+                docs = list(db[COLLECTION_NAME].find(filter_dict).limit(limit))
+
+                if docs:
+                    df = pd.json_normalize(docs)
+                    if '_id' in df.columns:
+                        df['_id'] = df['_id'].astype(str)
+
                     # Liste des colonnes à afficher
                     columns_to_show = [
                         '_id', 'title', 'description_meta', 'description_marque_categorie',
