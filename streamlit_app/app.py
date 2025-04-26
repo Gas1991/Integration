@@ -43,26 +43,33 @@ def main():
 
     with tab1:
         st.header("Liste des Produits")
-                    # Liste des colonnes à afficher
-        columns_to_show = [
-                        '_id', 'title', 'description_meta', 'description_marque_categorie',
-                        'link', 'page_type', 'sku', 'null', 'product_overview',
-                        'image_url', 'savoir_plus_text', 'local_image_path'
-                    ]
-                    
-                    # Ne garder que celles qui existent vraiment dans le dataframe
-                    existing_columns = [col for col in columns_to_show if col in df.columns]
-                    df_filtered = df[existing_columns]
-                    
-                    st.dataframe(df_filtered, height=600)
+        try:
+            # Exécution de la requête MongoDB sans filtre et limite
+            docs = list(db[COLLECTION_NAME].find())
 
-                    # Statistiques
-                    if 'special_price' in df.columns:
-                        st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
-                else:
-                    st.warning("Aucun document trouvé!")
-            except Exception as qe:
-                st.error(f"Erreur de requête: {qe}")
+            if docs:
+                df = pd.json_normalize(docs)
+                if '_id' in df.columns:
+                    df['_id'] = df['_id'].astype(str)
+
+                # Liste des colonnes à afficher
+                columns_to_show = [
+                    '_id', 'title', 'description_meta', 'description_marque_categorie',
+                    'link', 'page_type', 'sku', 'null', 'product_overview',
+                    'image_url', 'savoir_plus_text', 'local_image_path'
+                ]
+                
+                # Ne garder que celles qui existent vraiment dans le dataframe
+                existing_columns = [col for col in columns_to_show if col in df.columns]
+                df_filtered = df[existing_columns]
+                
+                st.dataframe(df_filtered, height=600)
+
+                # Statistiques
+                if 'special_price' in df.columns:
+                    st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
+            else:
+                st.warning("Aucun document trouvé!")
 
         except Exception as e:
             st.error(f"Erreur MongoDB: {str(e)}")
