@@ -9,7 +9,7 @@ st.set_page_config(page_title="MongoDB Connection Tester", layout="wide")
 st.title("🔍 MongoDB Atlas Connection Test")
 
 # Securely format the URI (already properly formatted in your case)
-uri = "mongodb+srv://ghassengharbi191:RLQuuAeyYH8n3icB@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+uri = "mongodb+srv://ghassengharbi191:RLQuuAeyYH8n3icB@cluster0.wrzdaw1.mongodb.net/Mytek_database?retryWrites=true&w=majority&appName=Cluster0"
 
 def test_mongodb_connection(uri):
     """Test MongoDB connection and return results"""
