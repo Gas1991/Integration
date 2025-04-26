@@ -55,8 +55,8 @@ def main():
 
                 # Liste des colonnes à afficher
                 columns_to_show = [
-                    '_id', 'title', 'description_meta', 'description_marque_categorie',
-                    'link', 'page_type', 'sku', 'null', 'product_overview',
+                    'sku', 'title', 'description_meta', 'description_marque_categorie',
+                    'link', 'page_type', 'null', 'product_overview',
                     'image_url', 'savoir_plus_text', 'local_image_path'
                 ]
                 
