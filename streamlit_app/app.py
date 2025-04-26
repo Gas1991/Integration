@@ -1,3 +1,6 @@
+# Initialisation Streamlit
+st.set_page_config(layout="wide")
+st.title("Mytek Analytics Dashboard")
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
@@ -11,6 +14,8 @@ username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
+COLLECTION_NAME = 'mytek_pages'   # 👈 met ici ta collection
+
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
 # Initialisation Streamlit
@@ -36,33 +41,39 @@ def main():
 
     client = get_mongo_client()
     db = client[MONGO_DB]
+    collection = db[COLLECTION_NAME]
     
     # Interface utilisateur
     tab1, tab2 = st.tabs(["Produits", "Images"])
     
     with tab1:
-        st.header("Liste des Produits")
+        st.header(f"Liste des Produits - Collection : {COLLECTION_NAME}")
         try:
-            collections = db.list_collection_names()
-            selected_collection = st.selectbox("Collection", collections)
-            
             # Options de requête
             limit = st.number_input("Nombre max de documents", 1, 30000, 100)
             query_filter = st.text_input("Filtre (JSON)", '{}')
             
             # Exécution de la requête
             try:
-                filter_dict = eval(query_filter)  # Attention: utiliser avec précaution
-                docs = list(db[selected_collection].find(filter_dict).limit(limit))
+                filter_dict = eval(query_filter)  # ⚠️ à sécuriser éventuellement
+                docs = list(collection.find(filter_dict).limit(limit))
                 
                 if docs:
                     df = pd.json_normalize(docs)
                     if '_id' in df.columns:
                         df['_id'] = df['_id'].astype(str)
-                    
-                    st.dataframe(df, height=600)
-                    
-                    # Statistiques
+
+                    # Colonnes souhaitées
+                    selected_columns = [
+                        'title', 'description_meta', 'description_marque_categorie',
+                        'link', 'page_type', 'sku', 'product_overview',
+                        'image_url', 'local_image_path'
+                    ]
+                    available_columns = [col for col in selected_columns if col in df.columns]
+
+                    st.dataframe(df[available_columns], height=600)
+
+                    # Statistiques éventuelles
                     if 'special_price' in df.columns:
                         st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
                 else:
@@ -100,3 +111,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
