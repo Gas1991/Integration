@@ -16,7 +16,7 @@ IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
 # Initialisation Streamlit
 st.set_page_config(layout="wide")
-st.title("Mytek produits Dashboard")
+st.title("Mytek Produits Dashboard")
 
 @st.cache_resource(ttl=3600)
 def get_mongo_client():
