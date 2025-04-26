@@ -43,10 +43,11 @@ def main():
 
     with tab1:
         st.header("Liste des Produits")
+        
         try:
             # Exécution de la requête MongoDB sans filtre et limite
             docs = list(db[COLLECTION_NAME].find())
-
+            
             if docs:
                 df = pd.json_normalize(docs)
                 if '_id' in df.columns:
@@ -63,7 +64,14 @@ def main():
                 existing_columns = [col for col in columns_to_show if col in df.columns]
                 df_filtered = df[existing_columns]
                 
-                st.dataframe(df_filtered, height=600)
+                # Input pour recherche
+                search_term = st.text_input("Rechercher", "")
+                if search_term:
+                    # Filtrer les données en fonction du terme de recherche
+                    df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
+                
+                # Afficher le dataframe avec la première ligne figée
+                st.dataframe(df_filtered, height=600, use_container_width=True, freeze_rows=1)
 
                 # Statistiques
                 if 'special_price' in df.columns:
