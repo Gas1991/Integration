@@ -5,6 +5,7 @@ import os
 from PIL import Image
 import gridfs
 from urllib.parse import quote_plus
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Configuration sécurisée MongoDB
 username = quote_plus('ghassengharbi191')
@@ -70,8 +71,17 @@ def main():
                     # Filtrer les données en fonction du terme de recherche
                     df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
                 
-                # Afficher le dataframe avec la première ligne figée (utiliser le layout responsive)
-                st.dataframe(df_filtered, height=600, use_container_width=True)
+                # Configuration pour Ag-Grid
+                gb = GridOptionsBuilder.from_dataframe(df_filtered)
+                gb.configure_grid_options(enableSorting=True, enableFilter=True)
+                gb.configure_column("title", headerCheckboxSelection=True)
+                gb.configure_columns(list(df_filtered.columns))
+                grid_options = gb.build()
+
+                # Afficher le dataframe avec la première ligne figée
+                grid_options['pinnedTop'] = ['_id']  # Figer la première ligne (_id)
+
+                AgGrid(df_filtered, gridOptions=grid_options, height=600, use_container_width=True)
 
                 # Statistiques
                 if 'special_price' in df.columns:
