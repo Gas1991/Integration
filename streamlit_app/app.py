@@ -1,3 +1,4 @@
+import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import os
@@ -46,7 +47,7 @@ def main():
             selected_collection = st.selectbox("Collection", collections)
             
             # Options de requête
-            limit = st.number_input("Nombre max de documents", 1, 30000, 100)
+            limit = st.number_input("Nombre max de documents", 1, 10000, 100)
             query_filter = st.text_input("Filtre (JSON)", '{}')
             
             # Exécution de la requête
