@@ -43,22 +43,8 @@ def main():
 
     with tab1:
         st.header("Liste des Produits")
-        try:
-            # Options de requête
-            limit = st.number_input("Nombre max de documents", 1, 10000, 100)
-
-            # Exécution de la requête
-            try:
-                filter_dict = eval(query_filter)  # Attention: à sécuriser en prod
-                docs = list(db[COLLECTION_NAME].find(filter_dict).limit(limit))
-
-                if docs:
-                    df = pd.json_normalize(docs)
-                    if '_id' in df.columns:
-                        df['_id'] = df['_id'].astype(str)
-
                     # Liste des colonnes à afficher
-                    columns_to_show = [
+        columns_to_show = [
                         '_id', 'title', 'description_meta', 'description_marque_categorie',
                         'link', 'page_type', 'sku', 'null', 'product_overview',
                         'image_url', 'savoir_plus_text', 'local_image_path'
