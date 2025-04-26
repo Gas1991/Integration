@@ -3,9 +3,8 @@ from pymongo import MongoClient
 import pandas as pd
 import os
 from PIL import Image
-import gridfs
 from urllib.parse import quote_plus
-
+from gridfs import GridFS  # This comes from pymongo
 # Configuration sécurisée MongoDB
 username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
