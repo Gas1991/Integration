@@ -3,5 +3,3 @@ pymongo
 pandas
 Pillow
 gridfs
-urllib3
-streamlit-aggrid
