@@ -46,7 +46,6 @@ def main():
         try:
             # Options de requête
             limit = st.number_input("Nombre max de documents", 1, 10000, 100)
-            query_filter = st.text_input("Filtre (JSON)", '{}')
 
             # Exécution de la requête
             try:
