@@ -11,6 +11,7 @@ username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
+COLLECTION_NAME = 'mytek_products'  # <-- remplace par ta collection cible
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
 # Initialisation Streamlit
@@ -36,32 +37,29 @@ def main():
 
     client = get_mongo_client()
     db = client[MONGO_DB]
-    
-    # Interface utilisateur
+
+    # Tabs interface
     tab1, tab2 = st.tabs(["Produits", "Images"])
-    
+
     with tab1:
         st.header("Liste des Produits")
         try:
-            collections = db.list_collection_names()
-            selected_collection = st.selectbox("Collection", collections)
-            
             # Options de requête
             limit = st.number_input("Nombre max de documents", 1, 10000, 100)
             query_filter = st.text_input("Filtre (JSON)", '{}')
-            
+
             # Exécution de la requête
             try:
-                filter_dict = eval(query_filter)  # Attention: utiliser avec précaution
-                docs = list(db[selected_collection].find(filter_dict).limit(limit))
-                
+                filter_dict = eval(query_filter)  # Attention: à sécuriser en prod
+                docs = list(db[COLLECTION_NAME].find(filter_dict).limit(limit))
+
                 if docs:
                     df = pd.json_normalize(docs)
                     if '_id' in df.columns:
                         df['_id'] = df['_id'].astype(str)
-                    
+
                     st.dataframe(df, height=600)
-                    
+
                     # Statistiques
                     if 'special_price' in df.columns:
                         st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
@@ -69,30 +67,34 @@ def main():
                     st.warning("Aucun document trouvé!")
             except Exception as qe:
                 st.error(f"Erreur de requête: {qe}")
-                
+
         except Exception as e:
             st.error(f"Erreur MongoDB: {str(e)}")
-    
+
     with tab2:
         st.header("Gestion des Images")
+
         image_option = st.radio("Source", ["Local", "GridFS"])
-        
+
         if image_option == "Local":
             try:
-                images = [f for f in os.listdir(IMAGES_DIR) if f.endswith(('.jpg', '.png'))]
-                selected_image = st.selectbox("Choisir une image", images)
-                img_path = os.path.join(IMAGES_DIR, selected_image)
-                st.image(img_path, caption=selected_image)
+                images = [f for f in os.listdir(IMAGES_DIR) if f.lower().endswith(('.jpg', '.png'))]
+                if images:
+                    for img_file in images:
+                        img_path = os.path.join(IMAGES_DIR, img_file)
+                        st.image(img_path, caption=img_file)
+                else:
+                    st.warning("Aucune image disponible dans le dossier local.")
             except Exception as e:
                 st.error(f"Erreur images locales: {str(e)}")
+
         else:
             try:
                 fs = gridfs.GridFS(db)
                 files = list(fs.find())
                 if files:
-                    selected_file = st.selectbox("Fichiers GridFS", [f.filename for f in files])
-                    file_data = fs.find_one({'filename': selected_file})
-                    st.image(file_data.read(), caption=selected_file)
+                    for file_data in files:
+                        st.image(file_data.read(), caption=file_data.filename)
                 else:
                     st.warning("Aucun fichier dans GridFS")
             except Exception as e:
