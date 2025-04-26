@@ -1,7 +1,4 @@
-# Initialisation Streamlit
-st.set_page_config(layout="wide")
-st.title("Mytek Analytics Dashboard")
-import streamlit as st
+import streamlit as st  # ce doit être la toute première ligne
 from pymongo import MongoClient
 import pandas as pd
 import os
