@@ -55,9 +55,11 @@ def main():
 
                 # Liste des colonnes à afficher
                 columns_to_show = [
-                    'sku', 'title', 'page_type', 'description_meta', 'product_overview' , 'description_marque_categorie',
-                    'image_url', 'savoir_plus_text', 'local_image_path'
-                ]
+                    'sku', 'title', 'page_type', 'description_meta', 'product_overview',
+                    'image_url', 'savoir_plus_text' ]
+
+                # Filter rows where page_type is 'product page'
+                product_pages_df = df[df['page_type'] == 'product page'][columns_to_show]
                 
                 # Ne garder que celles qui existent vraiment dans le dataframe
                 existing_columns = [col for col in columns_to_show if col in df.columns]
