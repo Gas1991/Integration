@@ -1,4 +1,4 @@
-adjust this code import streamlit as st
+import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import os
