@@ -53,7 +53,8 @@ def main():
                 if '_id' in df.columns:
                     df['_id'] = df['_id'].astype(str)
                 
-
+                
+                df = df[df['page_type'] == 'product page']
                 # Liste des colonnes à afficher
                 columns_to_show = [
                     'sku', 'title', 'page_type', 'description_meta', 'product_overview' ,'savoir_plus_text',
