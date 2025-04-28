@@ -52,13 +52,14 @@ def main():
                 df = pd.json_normalize(docs)
                 if '_id' in df.columns:
                     df['_id'] = df['_id'].astype(str)
+                df = df[df['page_type'] == 'product page']
 
                 # Liste des colonnes à afficher
                 columns_to_show = [
                     'sku', 'title', 'page_type', 'description_meta', 'product_overview' ,'savoir_plus_text',
                     'image_url', 
                 ]
-                product_pages_df = df[df['page_type'] == 'product page'][columns_to_show]
+            
                 # Ne garder que celles qui existent vraiment dans le dataframe
                 existing_columns = [col for col in columns_to_show if col in df.columns]
                 df_filtered = df[existing_columns]
