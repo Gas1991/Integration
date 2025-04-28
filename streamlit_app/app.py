@@ -55,8 +55,8 @@ def main():
 
                 # Liste des colonnes à afficher
                 columns_to_show = [
-                    'title', 'page_type', 'description_meta', 'product_overview' , 'description_marque_categorie',
-                    'image_url', 'savoir_plus_text', 'local_image_path'
+                    'sku','title', 'page_type', 'description_meta', 'product_overview',
+                    'image_url', 'savoir_plus_text',
                 ]
                 
                 # Ne garder que celles qui existent vraiment dans le dataframe
