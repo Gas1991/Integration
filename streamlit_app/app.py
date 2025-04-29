@@ -57,7 +57,7 @@ def mettre_a_jour_csv_si_necessaire(db):
     cached_count, last_update = lire_cache_info()
 
     if current_count != cached_count:
-        st.warning("📊 Modification détectée dans la base MongoDB : mise à jour du CSV.")
+        st.warning("📊 Modification détectée dans la base: mise à jour.")
         docs = list(db[COLLECTION_NAME].find())
 
         if docs:
