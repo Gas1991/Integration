@@ -1,55 +1,3 @@
-import streamlit as st
-from pymongo import MongoClient
-import pandas as pd
-import os
-from PIL import Image
-import gridfs
-from urllib.parse import quote_plus
-
-# Configuration sécurisée MongoDB
-username = quote_plus('ghassengharbi191')
-password = quote_plus('RLQuuAeyYH8n3icB')
-MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
-MONGO_DB = 'Mytek_database'
-COLLECTION_NAME = 'Produits_mytek'
-IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
-CACHE_DIR = "cache"
-CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
-
-# Initialisation Streamlit
-st.set_page_config(layout="wide")
-st.title("Mytek Produits Dashboard")
-
-@st.cache_resource(ttl=3600)
-def get_mongo_client():
-    try:
-        client = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=None)
-        client.admin.command('ping')
-        return client
-    except Exception as e:
-        st.error(f"🔌 Erreur de connexion MongoDB: {str(e)}")
-        st.stop()
-
-def load_data_from_mongo():
-    client = get_mongo_client()
-    db = client[MONGO_DB]
-    docs = list(db[COLLECTION_NAME].find())
-    if docs:
-        df = pd.json_normalize(docs)
-        if '_id' in df.columns:
-            df['_id'] = df['_id'].astype(str)
-        return df
-    else:
-        return pd.DataFrame()
-
-def save_cache(df):
-    if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR)
-    df.to_csv(CACHE_FILE, index=False)
-
-def load_cache():
-    return pd.read_csv(CACHE_FILE)
-
 def main():
     if not os.path.exists(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
@@ -57,18 +5,25 @@ def main():
 
     # Contrôle de cache et bouton de mise à jour
     use_cache = os.path.exists(CACHE_FILE)
-    if use_cache:
-        st.success("✅ Cache produit chargé depuis le fichier CSV.")
-        if st.button("🔄 Recharger depuis MongoDB (forcer MAJ cache)"):
+
+    if 'df' not in st.session_state:
+        if use_cache:
+            df = load_cache()
+            st.session_state.df = df
+            st.success("✅ Cache produit chargé depuis le fichier CSV.")
+        else:
+            st.info("📦 Pas de cache trouvé, chargement depuis MongoDB.")
             df = load_data_from_mongo()
             save_cache(df)
-            st.experimental_rerun()
-        else:
-            df = load_cache()
-    else:
-        st.info("📦 Pas de cache trouvé, chargement depuis MongoDB.")
+            st.session_state.df = df
+
+    if st.button("🔄 Recharger depuis MongoDB (forcer MAJ cache)"):
         df = load_data_from_mongo()
         save_cache(df)
+        st.session_state.df = df
+        st.success("✅ Cache mis à jour avec succès.")
+
+    df = st.session_state.df
 
     tab1, tab2 = st.tabs(["Produits", "Images"])
 
@@ -123,6 +78,3 @@ def main():
                     st.warning("Aucun fichier dans GridFS")
             except Exception as e:
                 st.error(f"Erreur GridFS: {str(e)}")
-
-if __name__ == "__main__":
-    main()
