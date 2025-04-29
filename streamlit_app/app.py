@@ -13,7 +13,7 @@ MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
-CSV_PATH = r'D:\scarpy\mytek\crawling\produits_cache.csv'
+CSV_PATH = os.path.join("cache", "produits_cache.csv")
 
 # Initialisation Streamlit
 st.set_page_config(layout="wide")
