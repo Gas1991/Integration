@@ -5,13 +5,16 @@ import os
 from PIL import Image
 import gridfs
 from urllib.parse import quote_plus
+import time
 
-# 🔐 Configuration sécurisée MongoDB
+# 🔐 Configuration MongoDB sécurisée
 username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
+
+# 📁 Répertoires locaux
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 CACHE_DIR = "cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
@@ -56,10 +59,12 @@ def load_cache():
 
 # 🖥️ Fonction principale Streamlit
 def main():
+    # Vérifie et crée le dossier images si besoin
     if not os.path.exists(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
+    # Chargement initial des données en session
     if 'df' not in st.session_state:
         if os.path.exists(CACHE_FILE):
             df = load_cache()
@@ -71,14 +76,20 @@ def main():
             st.success("✅ Cache produit sauvegardé.")
         st.session_state.df = df
 
+    # Bouton de mise à jour MongoDB
     if st.button("🔄 Recharger depuis MongoDB (forcer MAJ cache)"):
         df = load_data_from_mongo()
         save_cache(df)
         st.session_state.df = df
+        last_mod_time = time.ctime(os.path.getmtime(CACHE_FILE))
         st.success("✅ Cache mis à jour depuis MongoDB.")
+        st.info(f"📂 Fichier cache mis à jour : {CACHE_FILE}")
+        st.write(f"🕒 Dernière mise à jour : {last_mod_time}")
 
+    # Récupération du dataframe depuis la session
     df = st.session_state.df
 
+    # Onglets de navigation
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
 
     with tab1:
@@ -86,13 +97,14 @@ def main():
 
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'page_type', 'description_meta',
-                'product_overview', 'savoir_plus_text', 'image_url'
+                'sku', 'title', 'page_type', 'description_meta', 'product_overview',
+                'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            search_term = st.text_input("🔍 Rechercher", "")
+            # Champ de recherche
+            search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
                 df_filtered = df_filtered[
                     df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
@@ -100,13 +112,18 @@ def main():
 
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
+            # Affichage moyenne prix si dispo
             if 'special_price' in df.columns:
-                special_prices = pd.to_numeric(df['special_price'], errors='coerce')
-                if not special_prices.dropna().empty:
-                    moyenne = special_prices.mean()
-                    st.metric("💰 Moyenne des prix", f"{moyenne:.2f} DT")
-                else:
-                    st.warning("Aucun prix valide disponible pour calculer la moyenne.")
+                try:
+                    df['special_price'] = pd.to_numeric(df['special_price'], errors='coerce')
+                    avg_price = df['special_price'].mean(skipna=True)
+                    if pd.notnull(avg_price):
+                        st.metric("💰 Moyenne des prix", f"{avg_price:.2f} DT")
+                    else:
+                        st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
+                except Exception as e:
+                    st.error(f"Erreur calcul moyenne : {str(e)}")
+
         else:
             st.warning("Aucun produit disponible.")
 
@@ -126,6 +143,7 @@ def main():
                     st.warning("Aucune image disponible dans le dossier local.")
             except Exception as e:
                 st.error(f"❌ Erreur chargement images locales : {str(e)}")
+
         else:
             try:
                 client = get_mongo_client()
