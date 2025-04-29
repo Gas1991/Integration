@@ -68,16 +68,16 @@ def main():
     if 'df' not in st.session_state:
         if os.path.exists(CACHE_FILE):
             df = load_cache()
-            st.success("✅ Cache produit chargé depuis le fichier CSV.")
+            st.success("✅ Cache produit chargé.")
         else:
-            st.info("📦 Pas de cache trouvé, chargement depuis MongoDB.")
+            st.info("📦 Pas de cache trouvé, chargement depuis DB.")
             df = load_data_from_mongo()
             save_cache(df)
             st.success("✅ Cache produit sauvegardé.")
         st.session_state.df = df
 
     # Bouton de mise à jour MongoDB
-    if st.button("🔄 Recharger depuis MongoDB (forcer MAJ cache)"):
+    if st.button("🔄 Recharger depuis DB (forcer MAJ cache)"):
         df = load_data_from_mongo()
         save_cache(df)
         st.session_state.df = df
