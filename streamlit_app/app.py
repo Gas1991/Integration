@@ -56,12 +56,10 @@ def load_cache():
 
 # 🖥️ Fonction principale Streamlit
 def main():
-    # Vérifie et crée le dossier images si besoin
     if not os.path.exists(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
-    # Chargement initial des données en session
     if 'df' not in st.session_state:
         if os.path.exists(CACHE_FILE):
             df = load_cache()
@@ -73,17 +71,14 @@ def main():
             st.success("✅ Cache produit sauvegardé.")
         st.session_state.df = df
 
-    # Bouton de mise à jour MongoDB
     if st.button("🔄 Recharger depuis MongoDB (forcer MAJ cache)"):
         df = load_data_from_mongo()
         save_cache(df)
         st.session_state.df = df
         st.success("✅ Cache mis à jour depuis MongoDB.")
 
-    # Récupération du dataframe depuis la session
     df = st.session_state.df
 
-    # Onglets
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
 
     with tab1:
@@ -91,13 +86,12 @@ def main():
 
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'page_type', 'description_meta', 'product_overview',
-                'savoir_plus_text', 'image_url'
+                'sku', 'title', 'page_type', 'description_meta',
+                'product_overview', 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            # Champ recherche
             search_term = st.text_input("🔍 Rechercher", "")
             if search_term:
                 df_filtered = df_filtered[
@@ -107,7 +101,12 @@ def main():
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
             if 'special_price' in df.columns:
-                st.metric("💰 Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
+                special_prices = pd.to_numeric(df['special_price'], errors='coerce')
+                if not special_prices.dropna().empty:
+                    moyenne = special_prices.mean()
+                    st.metric("💰 Moyenne des prix", f"{moyenne:.2f} DT")
+                else:
+                    st.warning("Aucun prix valide disponible pour calculer la moyenne.")
         else:
             st.warning("Aucun produit disponible.")
 
@@ -127,7 +126,6 @@ def main():
                     st.warning("Aucune image disponible dans le dossier local.")
             except Exception as e:
                 st.error(f"❌ Erreur chargement images locales : {str(e)}")
-
         else:
             try:
                 client = get_mongo_client()
