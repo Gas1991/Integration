@@ -12,13 +12,16 @@ password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
-IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
-CACHE_DIR = "cache"
-CSV_PATH = os.path.join(CACHE_DIR, "produits_cache.csv")
 
-# Vérification du dossier cache
-if not os.path.exists(CACHE_DIR):
-    os.makedirs(CACHE_DIR)
+# Dossiers locaux utilisables sur Streamlit Cloud
+CACHE_DIR = "cache"
+IMAGES_DIR = "images"
+
+# Création des dossiers si inexistants
+os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
+CSV_PATH = os.path.join(CACHE_DIR, "produits_cache.csv")
 
 # Initialisation Streamlit
 st.set_page_config(layout="wide")
@@ -29,7 +32,7 @@ def get_mongo_client():
     """Crée une connexion MongoDB sécurisée"""
     try:
         client = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=None)
-        client.admin.command('ping')  # Test de connexion
+        client.admin.command('ping')
         return client
     except Exception as e:
         st.error(f"🔌 Erreur de connexion MongoDB: {str(e)}")
@@ -47,15 +50,9 @@ def charger_dataframe_depuis_csv(chemin):
         return None
 
 def main():
-    # Vérification du dossier images
-    if not os.path.exists(IMAGES_DIR):
-        os.makedirs(IMAGES_DIR)
-        st.warning(f"Dossier images créé: {IMAGES_DIR}")
-
     client = get_mongo_client()
     db = client[MONGO_DB]
 
-    # Tabs interface
     tab1, tab2 = st.tabs(["Produits", "Images"])
 
     with tab1:
@@ -65,7 +62,6 @@ def main():
 
         if df is None:
             try:
-                # Exécution de la requête MongoDB
                 docs = list(db[COLLECTION_NAME].find())
 
                 if docs:
@@ -73,7 +69,6 @@ def main():
                     if '_id' in df.columns:
                         df['_id'] = df['_id'].astype(str)
 
-                    # Sauvegarde CSV cache
                     sauvegarder_dataframe_csv(df, CSV_PATH)
                     st.success("📄 Cache CSV généré avec succès.")
                 else:
@@ -86,7 +81,6 @@ def main():
         else:
             st.info("💾 Données chargées depuis le cache CSV.")
 
-        # Colonnes à afficher
         columns_to_show = [
             'sku', 'title', 'page_type', 'description_meta', 'product_overview' ,'savoir_plus_text',
             'image_url',
@@ -95,14 +89,12 @@ def main():
         existing_columns = [col for col in columns_to_show if col in df.columns]
         df_filtered = df[existing_columns]
 
-        # Recherche
         search_term = st.text_input("Rechercher", "")
         if search_term:
             df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
 
         st.dataframe(df_filtered, height=600, use_container_width=True)
 
-        # Statistiques
         if 'special_price' in df.columns:
             st.metric("Moyenne des prix", f"{df['special_price'].mean():.2f} DT")
 
