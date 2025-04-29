@@ -44,7 +44,7 @@ def sauvegarder_dataframe_csv(df, chemin):
 
 def charger_dataframe_depuis_csv(chemin):
     """Charge un DataFrame depuis un CSV si disponible"""
-    if os.path.exists(chemin):
+    if os.path.exists(chemin) and os.path.getsize(chemin) > 0:
         return pd.read_csv(chemin)
     else:
         return None
@@ -62,6 +62,7 @@ def main():
 
         if df is None:
             try:
+                # Exécution de la requête MongoDB
                 docs = list(db[COLLECTION_NAME].find())
 
                 if docs:
@@ -69,6 +70,7 @@ def main():
                     if '_id' in df.columns:
                         df['_id'] = df['_id'].astype(str)
 
+                    # Sauvegarde CSV cache
                     sauvegarder_dataframe_csv(df, CSV_PATH)
                     st.success("📄 Cache CSV généré avec succès.")
                 else:
