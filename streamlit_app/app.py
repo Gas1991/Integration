@@ -69,7 +69,7 @@ def save_cache(df):
 def load_cache():
     return pd.read_csv(CACHE_FILE)
 
-# 🖥️ Fonction principale Streamlit
+# 📥 Fonction principale Streamlit
 def main():
     # Vérifie et crée le dossier images si besoin
     if not os.path.exists(IMAGES_DIR):
@@ -101,20 +101,16 @@ def main():
     # Récupération du dataframe depuis la session
     df = st.session_state.df
 
-    # Exclure les lignes vides (lignes avec toutes les valeurs NaN ou vides)
-    df_cleaned = df.dropna(how='all')  # Supprime les lignes où toutes les colonnes sont NaN
-    df_cleaned = df_cleaned.loc[~df_cleaned.isnull().all(axis=1)]  # Assure que les lignes vides sont supprimées
-
     # Onglets de navigation
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
 
     with tab1:
         st.header("📝 Liste des Produits")
 
-        if not df_cleaned.empty:
+        if not df.empty:
             # Paginate every 10 items
             page_size = 10
-            num_pages = len(df_cleaned) // page_size + (1 if len(df_cleaned) % page_size != 0 else 0)
+            num_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
             
             # Select page
             page = st.selectbox("Sélectionner la page", range(1, num_pages + 1))
@@ -122,15 +118,11 @@ def main():
             end_row = start_row + page_size
 
             # Filter the dataframe based on the selected page
-            df_filtered = df_cleaned[start_row:end_row]
+            df_filtered = df[start_row:end_row]
 
-            # Display filtered data
-            columns_to_show = [
-                'sku', 'title', 'page_type', 'description_meta', 'value_html_inner',
-                'savoir_plus_text', 'image_url'
-            ]
-            existing_columns = [col for col in columns_to_show if col in df_cleaned.columns]
-            df_filtered = df_filtered[existing_columns]
+            # Exclude empty rows based on specific columns
+            df_filtered = df_filtered.dropna(subset=existing_columns, how='all')  # Remove rows where all selected columns are empty
+            df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.strip().any(), axis=1)]  # Remove rows with all empty values
 
             # Champ de recherche
             search_term = st.text_input("🔍 Rechercher un produit", "")
@@ -139,6 +131,7 @@ def main():
                     df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
                 ]
 
+            # Display filtered data
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
         else:
