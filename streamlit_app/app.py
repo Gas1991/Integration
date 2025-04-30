@@ -53,50 +53,53 @@ def save_cache(df):
         os.makedirs(CACHE_DIR)
     df.to_csv(CACHE_FILE, index=False)
 
-# 📥 Charger le cache CSV
+# 📥 Charger le cache CSV (ajusté)
 def load_cache():
-    return pd.read_csv(CACHE_FILE)
+    if os.path.exists(CACHE_FILE):
+        if os.path.getsize(CACHE_FILE) > 0:
+            return pd.read_csv(CACHE_FILE)
+        else:
+            st.warning("⚠️ Le cache est vide, chargement depuis MongoDB.")
+            df = load_data_from_mongo()
+            save_cache(df)
+            return df
+    else:
+        st.warning("📂 Pas de fichier cache trouvé, chargement depuis MongoDB.")
+        df = load_data_from_mongo()
+        save_cache(df)
+        return df
 
 # 🖥️ Fonction principale Streamlit
 def main():
+    # Désactivation des toolbars sur dataframe
+    st.markdown("""
+        <style>
+        [data-testid="stElementToolbar"] {display: none;}
+        </style>
+        """, unsafe_allow_html=True)
+
     # Vérifie et crée le dossier images si besoin
     if not os.path.exists(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
-    # 🔒 Désactiver téléchargement et fullscreen sur les dataframes
-    st.markdown(
-        """
-        <style>
-        [data-testid="stElementToolbar"] {
-            display: none;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
     # Chargement initial des données en session
     if 'df' not in st.session_state:
-        if os.path.exists(CACHE_FILE):
-            df = load_cache()
-            st.success("✅ Cache produit chargé.")
-        else:
-            st.info("📦 Pas de cache trouvé, chargement depuis DB.")
-            df = load_data_from_mongo()
-            save_cache(df)
-            st.success("✅ Cache produit sauvegardé.")
+        df = load_cache()
         st.session_state.df = df
 
     # Bouton de mise à jour MongoDB
     if st.button("🔄 Recharger depuis DB (forcer MAJ cache)"):
         df = load_data_from_mongo()
-        save_cache(df)
-        st.session_state.df = df
-        last_mod_time = time.ctime(os.path.getmtime(CACHE_FILE))
-        st.success("✅ Cache mis à jour depuis MongoDB.")
-        st.info(f"📂 Fichier cache mis à jour : {CACHE_FILE}")
-        st.write(f"🕒 Dernière mise à jour : {last_mod_time}")
+        if not df.empty:
+            save_cache(df)
+            st.session_state.df = df
+            last_mod_time = time.ctime(os.path.getmtime(CACHE_FILE))
+            st.success("✅ Cache produit mis à jour depuis MongoDB.")
+            st.info(f"📂 Fichier cache mis à jour : {CACHE_FILE}")
+            st.write(f"🕒 Dernière mise à jour : {last_mod_time}")
+        else:
+            st.error("❌ Aucune donnée récupérée depuis MongoDB.")
 
     # Récupération du dataframe depuis la session
     df = st.session_state.df
@@ -135,7 +138,6 @@ def main():
                         st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
                 except Exception as e:
                     st.error(f"Erreur calcul moyenne : {str(e)}")
-
         else:
             st.warning("Aucun produit disponible.")
 
@@ -155,7 +157,6 @@ def main():
                     st.warning("Aucune image disponible dans le dossier local.")
             except Exception as e:
                 st.error(f"❌ Erreur chargement images locales : {str(e)}")
-
         else:
             try:
                 client = get_mongo_client()
