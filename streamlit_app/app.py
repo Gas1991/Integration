@@ -101,6 +101,10 @@ def main():
     # Récupération du dataframe depuis la session
     df = st.session_state.df
 
+    # 🧹 Nettoyer les lignes vides
+    df = df.dropna(how="all")  # Supprime les lignes où toutes les valeurs sont NaN
+    df = df.dropna(axis=1, how="all")  # Supprime les colonnes où toutes les valeurs sont NaN
+
     # Onglets de navigation
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
 
