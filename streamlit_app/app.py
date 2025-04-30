@@ -19,6 +19,12 @@ IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 CACHE_DIR = "cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 
+
+
+# ⚙️ Initialisation Streamlit
+st.set_page_config(layout="wide")
+st.title("📊 Produits Dashboard")
+
 # 👀 Hide the Streamlit toolbar
 st.markdown(
     """
@@ -30,11 +36,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# ⚙️ Initialisation Streamlit
-st.set_page_config(layout="wide")
-st.title("📊 Produits Dashboard")
-
 # 📦 Connexion MongoDB
 @st.cache_resource(ttl=3600)
 def get_mongo_client():
