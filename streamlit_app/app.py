@@ -19,7 +19,7 @@ IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-@st.cache_resource(ttl=3600)
+@st.cache_resource(ttl=86400)
 def get_mongo_client():
     try:
         client = MongoClient(MONGO_URI, connectTimeoutMS=30000, socketTimeoutMS=None)
@@ -29,7 +29,7 @@ def get_mongo_client():
         st.error(f"🔌 Erreur de connexion MongoDB : {str(e)}")
         st.stop()
 
-@st.cache_data(ttl="24h")
+@st.cache_data(ttl=86400)
 def load_data_from_mongo():
     client = get_mongo_client()
     db = client[MONGO_DB]
@@ -41,6 +41,12 @@ def load_data_from_mongo():
         return df
     else:
         return pd.DataFrame()
+
+def clean_dataframe_for_display(df):
+    for col in df.columns:
+        if df[col].apply(lambda x: isinstance(x, (list, dict))).any():
+            df[col] = df[col].astype(str)
+    return df
 
 def main():
     if not os.path.exists(IMAGES_DIR):
@@ -70,7 +76,7 @@ def main():
     st.caption(f"🕒 Dernière mise à jour : {st.session_state.last_update.strftime('%d/%m/%Y %H:%M:%S')}")
 
     if st.button("🔄 Forcer mise à jour des données DB"):
-        load_data_from_mongo.clear()  
+        load_data_from_mongo.clear()
         df = load_data_from_mongo()
         st.session_state.df = df
         st.session_state.last_update = datetime.now()
@@ -96,6 +102,8 @@ def main():
                 df_filtered = df_filtered[
                     df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
                 ]
+
+            df_filtered = clean_dataframe_for_display(df_filtered)
 
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
