@@ -21,19 +21,7 @@ CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 
 # ⚙️ Initialisation Streamlit
 st.set_page_config(layout="wide")
-st.title("📊 Produits Dashboard")
-
-# 👀 Hide the Streamlit toolbar
-st.markdown(
-    """
-    <style>
-    [data-testid="stElementToolbar"] {
-        display: none;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.title("📊 Mytek Produits Dashboard")
 
 # 📦 Connexion MongoDB
 @st.cache_resource(ttl=3600)
@@ -108,24 +96,12 @@ def main():
         st.header("📝 Liste des Produits")
 
         if not df.empty:
-            # Paginate every 10 items
-            page_size = 16
-            num_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
-            
-            # Select page
-            page = st.selectbox("Sélectionner la page", range(1, num_pages + 1))
-            start_row = (page - 1) * page_size
-            end_row = start_row + page_size
-
-            # Filter the dataframe based on the selected page
-            df_filtered = df[start_row:end_row]
-
-            # Display filtered data
             columns_to_show = [
-                'sku', 'title', 'page_type', 'description_meta', 'value_html_inner', 'image_url'
+                'sku', 'title', 'page_type', 'description_meta', 'value_html_inner',
+                'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
-            df_filtered = df_filtered[existing_columns]
+            df_filtered = df[existing_columns]
 
             # Champ de recherche
             search_term = st.text_input("🔍 Rechercher un produit", "")
@@ -135,6 +111,18 @@ def main():
                 ]
 
             st.dataframe(df_filtered, height=600, use_container_width=True)
+
+            # Affichage moyenne prix si dispo
+            if 'special_price' in df.columns:
+                try:
+                    df['special_price'] = pd.to_numeric(df['special_price'], errors='coerce')
+                    avg_price = df['special_price'].mean(skipna=True)
+                    if pd.notnull(avg_price):
+                        st.metric("💰 Moyenne des prix", f"{avg_price:.2f} DT")
+                    else:
+                        st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
+                except Exception as e:
+                    st.error(f"Erreur calcul moyenne : {str(e)}")
 
         else:
             st.warning("Aucun produit disponible.")
