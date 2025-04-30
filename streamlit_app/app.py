@@ -5,25 +5,20 @@ import os
 from PIL import Image
 import gridfs
 from urllib.parse import quote_plus
-import time
+from datetime import datetime
 
-# 🔐 Configuration MongoDB sécurisée
+# 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
 password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
 
-# 📁 Répertoires locaux
 IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
-CACHE_DIR = "cache"
-CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 
-# ⚙️ Initialisation Streamlit
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# 📦 Connexion MongoDB
 @st.cache_resource(ttl=3600)
 def get_mongo_client():
     try:
@@ -34,7 +29,7 @@ def get_mongo_client():
         st.error(f"🔌 Erreur de connexion MongoDB : {str(e)}")
         st.stop()
 
-# 📥 Charger les données depuis MongoDB
+@st.cache_data(ttl="24h")
 def load_data_from_mongo():
     client = get_mongo_client()
     db = client[MONGO_DB]
@@ -47,24 +42,11 @@ def load_data_from_mongo():
     else:
         return pd.DataFrame()
 
-# 📤 Sauvegarder le cache CSV
-def save_cache(df):
-    if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR)
-    df.to_csv(CACHE_FILE, index=False)
-
-# 📥 Charger le cache CSV
-def load_cache():
-    return pd.read_csv(CACHE_FILE)
-
-# 🖥️ Fonction principale Streamlit
 def main():
-    # Vérifie et crée le dossier images si besoin
     if not os.path.exists(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
-    # 🔒 Désactiver téléchargement et fullscreen sur les dataframes
     st.markdown(
         """
         <style>
@@ -76,32 +58,26 @@ def main():
         unsafe_allow_html=True
     )
 
-    # Chargement initial des données en session
-    if 'df' not in st.session_state:
-        if os.path.exists(CACHE_FILE):
-            df = load_cache()
-            st.success("✅ Cache produit chargé.")
-        else:
-            st.info("📦 Pas de cache trouvé, chargement depuis DB.")
-            df = load_data_from_mongo()
-            save_cache(df)
-            st.success("✅ Cache produit sauvegardé.")
-        st.session_state.df = df
-
-    # Bouton de mise à jour MongoDB
-    if st.button("🔄 Recharger depuis DB (forcer MAJ cache)"):
+    # Chargement initial des données en session + timestamp
+    if 'df' not in st.session_state or 'last_update' not in st.session_state:
+        st.info("📦 Chargement des produits depuis MongoDB (cache serveur 24h)")
         df = load_data_from_mongo()
-        save_cache(df)
         st.session_state.df = df
-        last_mod_time = time.ctime(os.path.getmtime(CACHE_FILE))
-        st.success("✅ Cache mis à jour depuis MongoDB.")
-        st.info(f"📂 Fichier cache mis à jour : {CACHE_FILE}")
-        st.write(f"🕒 Dernière mise à jour : {last_mod_time}")
+        st.session_state.last_update = datetime.now()
+        st.success("✅ Données chargées et mises en cache.")
 
-    # Récupération du dataframe depuis la session
+    # Affichage date de dernière mise à jour
+    st.caption(f"🕒 Dernière mise à jour : {st.session_state.last_update.strftime('%d/%m/%Y %H:%M:%S')}")
+
+    if st.button("🔄 Forcer mise à jour des données MongoDB"):
+        load_data_from_mongo.clear()  
+        df = load_data_from_mongo()
+        st.session_state.df = df
+        st.session_state.last_update = datetime.now()
+        st.success("✅ Cache actualisé et données rechargées.")
+
     df = st.session_state.df
 
-    # Onglets de navigation
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
 
     with tab1:
@@ -115,7 +91,6 @@ def main():
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            # Champ de recherche
             search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
                 df_filtered = df_filtered[
@@ -124,7 +99,6 @@ def main():
 
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
-            # Affichage moyenne prix si dispo
             if 'special_price' in df.columns:
                 try:
                     df['special_price'] = pd.to_numeric(df['special_price'], errors='coerce')
@@ -134,7 +108,7 @@ def main():
                     else:
                         st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
                 except Exception as e:
-                    st.error(f"Erreur calcul moyenne : {str(e)}")
+                    st.error(f"Erreur moyenne : {str(e)}")
 
         else:
             st.warning("Aucun produit disponible.")
@@ -170,6 +144,5 @@ def main():
             except Exception as e:
                 st.error(f"❌ Erreur chargement GridFS : {str(e)}")
 
-# ✅ Exécution
 if __name__ == "__main__":
     main()
