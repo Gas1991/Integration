@@ -19,6 +19,18 @@ IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 CACHE_DIR = "cache"
 CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 
+# 👀 Hide the Streamlit toolbar
+st.markdown(
+    """
+    <style>
+    [data-testid="stElementToolbar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # ⚙️ Initialisation Streamlit
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
