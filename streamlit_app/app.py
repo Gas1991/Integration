@@ -109,7 +109,7 @@ def main():
 
         if not df.empty:
             # Paginate every 10 items
-            page_size = 15
+            page_size = 16
             num_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
             
             # Select page
