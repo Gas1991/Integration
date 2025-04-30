@@ -108,12 +108,25 @@ def main():
         st.header("📝 Liste des Produits")
 
         if not df.empty:
+            # Paginate every 10 items
+            page_size = 10
+            num_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
+            
+            # Select page
+            page = st.selectbox("Sélectionner la page", range(1, num_pages + 1))
+            start_row = (page - 1) * page_size
+            end_row = start_row + page_size
+
+            # Filter the dataframe based on the selected page
+            df_filtered = df[start_row:end_row]
+
+            # Display filtered data
             columns_to_show = [
                 'sku', 'title', 'page_type', 'description_meta', 'value_html_inner',
                 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
-            df_filtered = df[existing_columns]
+            df_filtered = df_filtered[existing_columns]
 
             # Champ de recherche
             search_term = st.text_input("🔍 Rechercher un produit", "")
