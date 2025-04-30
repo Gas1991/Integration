@@ -91,7 +91,7 @@ def main():
 
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'page_type', 'description_meta', 'value_html_inner',
+                'sku', 'title', 'page_type', 'description_meta','fiche_technique', 'value_html_inner',
                 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
