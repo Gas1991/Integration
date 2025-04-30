@@ -60,7 +60,7 @@ def main():
 
     # Chargement initial des données en session + timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
-        st.info("📦 Chargement des produits depuis MongoDB (cache serveur 24h)")
+        st.info("📦 Chargement des produits depuis DB ")
         df = load_data_from_mongo()
         st.session_state.df = df
         st.session_state.last_update = datetime.now()
@@ -69,7 +69,7 @@ def main():
     # Affichage date de dernière mise à jour
     st.caption(f"🕒 Dernière mise à jour : {st.session_state.last_update.strftime('%d/%m/%Y %H:%M:%S')}")
 
-    if st.button("🔄 Forcer mise à jour des données MongoDB"):
+    if st.button("🔄 Forcer mise à jour des données DB"):
         load_data_from_mongo.clear()  
         df = load_data_from_mongo()
         st.session_state.df = df
