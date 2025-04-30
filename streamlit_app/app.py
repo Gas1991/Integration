@@ -101,9 +101,9 @@ def main():
     # Récupération du dataframe depuis la session
     df = st.session_state.df
 
-    # 🧹 Nettoyer les lignes vides
-    df = df.dropna(how="all")  # Supprime les lignes où toutes les valeurs sont NaN
-    df = df.dropna(axis=1, how="all")  # Supprime les colonnes où toutes les valeurs sont NaN
+    # Exclure les lignes vides (lignes avec toutes les valeurs NaN ou vides)
+    df_cleaned = df.dropna(how='all')  # Supprime les lignes où toutes les colonnes sont NaN
+    df_cleaned = df_cleaned.loc[~df_cleaned.isnull().all(axis=1)]  # Assure que les lignes vides sont supprimées
 
     # Onglets de navigation
     tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
@@ -111,10 +111,10 @@ def main():
     with tab1:
         st.header("📝 Liste des Produits")
 
-        if not df.empty:
+        if not df_cleaned.empty:
             # Paginate every 10 items
             page_size = 10
-            num_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
+            num_pages = len(df_cleaned) // page_size + (1 if len(df_cleaned) % page_size != 0 else 0)
             
             # Select page
             page = st.selectbox("Sélectionner la page", range(1, num_pages + 1))
@@ -122,14 +122,14 @@ def main():
             end_row = start_row + page_size
 
             # Filter the dataframe based on the selected page
-            df_filtered = df[start_row:end_row]
+            df_filtered = df_cleaned[start_row:end_row]
 
             # Display filtered data
             columns_to_show = [
                 'sku', 'title', 'page_type', 'description_meta', 'value_html_inner',
                 'savoir_plus_text', 'image_url'
             ]
-            existing_columns = [col for col in columns_to_show if col in df.columns]
+            existing_columns = [col for col in columns_to_show if col in df_cleaned.columns]
             df_filtered = df_filtered[existing_columns]
 
             # Champ de recherche
