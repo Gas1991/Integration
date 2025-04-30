@@ -135,4 +135,29 @@ def main():
         if image_option == "Local":
             try:
                 images = [f for f in os.listdir(IMAGES_DIR) if f.lower().endswith(('.jpg', '.png'))]
-                if
+                if images:
+                    for img_file in images:
+                        img_path = os.path.join(IMAGES_DIR, img_file)
+                        st.image(img_path, caption=img_file)
+                else:
+                    st.warning("Aucune image disponible dans le dossier local.")
+            except Exception as e:
+                st.error(f"❌ Erreur chargement images locales : {str(e)}")
+
+        else:
+            try:
+                client = get_mongo_client()
+                db = client[MONGO_DB]
+                fs = gridfs.GridFS(db)
+                files = list(fs.find())
+                if files:
+                    for file_data in files:
+                        st.image(file_data.read(), caption=file_data.filename)
+                else:
+                    st.warning("Aucun fichier image dans GridFS.")
+            except Exception as e:
+                st.error(f"❌ Erreur chargement GridFS : {str(e)}")
+
+# ✅ Exécution
+if __name__ == "__main__":
+    main()
