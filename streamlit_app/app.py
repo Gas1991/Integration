@@ -21,7 +21,7 @@ CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 
 # ⚙️ Initialisation Streamlit
 st.set_page_config(layout="wide")
-st.title("📊 Mytek Produits Dashboard")
+st.title("📊 Produits Dashboard")
 
 # 📦 Connexion MongoDB
 @st.cache_resource(ttl=3600)
