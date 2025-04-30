@@ -23,6 +23,18 @@ CACHE_FILE = os.path.join(CACHE_DIR, "produits_cache.csv")
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
+# 👀 Hide the Streamlit toolbar
+st.markdown(
+    """
+    <style>
+    [data-testid="stElementToolbar"] {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # 📦 Connexion MongoDB
 @st.cache_resource(ttl=3600)
 def get_mongo_client():
@@ -110,19 +122,7 @@ def main():
                     df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
                 ]
 
-            st.dataframe(df_filtered, height=600, use_container_width=True, allow_data_download=False)
-
-            # Affichage moyenne prix si dispo
-            if 'special_price' in df.columns:
-                try:
-                    df['special_price'] = pd.to_numeric(df['special_price'], errors='coerce')
-                    avg_price = df['special_price'].mean(skipna=True)
-                    if pd.notnull(avg_price):
-                        st.metric("💰 Moyenne des prix", f"{avg_price:.2f} DT")
-                    else:
-                        st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
-                except Exception as e:
-                    st.error(f"Erreur calcul moyenne : {str(e)}")
+            st.dataframe(df_filtered, height=600, use_container_width=True)
 
         else:
             st.warning("Aucun produit disponible.")
@@ -135,29 +135,4 @@ def main():
         if image_option == "Local":
             try:
                 images = [f for f in os.listdir(IMAGES_DIR) if f.lower().endswith(('.jpg', '.png'))]
-                if images:
-                    for img_file in images:
-                        img_path = os.path.join(IMAGES_DIR, img_file)
-                        st.image(img_path, caption=img_file)
-                else:
-                    st.warning("Aucune image disponible dans le dossier local.")
-            except Exception as e:
-                st.error(f"❌ Erreur chargement images locales : {str(e)}")
-
-        else:
-            try:
-                client = get_mongo_client()
-                db = client[MONGO_DB]
-                fs = gridfs.GridFS(db)
-                files = list(fs.find())
-                if files:
-                    for file_data in files:
-                        st.image(file_data.read(), caption=file_data.filename)
-                else:
-                    st.warning("Aucun fichier image dans GridFS.")
-            except Exception as e:
-                st.error(f"❌ Erreur chargement GridFS : {str(e)}")
-
-# ✅ Exécution
-if __name__ == "__main__":
-    main()
+                if
