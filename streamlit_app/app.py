@@ -110,7 +110,7 @@ def main():
                     df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
                 ]
 
-            st.dataframe(df_filtered, height=600, use_container_width=True)
+            st.dataframe(df_filtered, height=600, use_container_width=True, allow_data_download=False)
 
             # Affichage moyenne prix si dispo
             if 'special_price' in df.columns:
