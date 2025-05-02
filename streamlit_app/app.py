@@ -56,16 +56,7 @@ def main():
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
-    st.markdown(
-        """
-        <style>
-        [data-testid="stElementToolbar"] {
-            display: none;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+
 
     # Chargement initial des données en session + timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
