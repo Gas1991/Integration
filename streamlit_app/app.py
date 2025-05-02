@@ -39,6 +39,10 @@ def load_data_from_mongo():
             df = pd.json_normalize(docs)
             if '_id' in df.columns:
                 df['_id'] = df['_id'].astype(str)
+            # Créer une colonne de recherche combinée
+            search_columns = ['sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner', 'savoir_plus_text']
+            existing_columns = [col for col in search_columns if col in df.columns]
+            df['search_text'] = df[existing_columns].astype(str).apply(lambda x: ' '.join(x), axis=1)
             return df
         else:
             return pd.DataFrame()
@@ -92,7 +96,7 @@ def main():
         st.header("📝 Liste des Produits")
         if not df.empty:
             columns_to_show = [
-                'sku','title','description_meta','fiche_technique', 'value_html_inner',
+                'sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner',
                 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
@@ -100,9 +104,8 @@ def main():
 
             search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
-                df_filtered = df_filtered[
-                    df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
-                ]
+                # Utiliser la colonne 'search_text' pour une recherche plus rapide
+                df_filtered = df_filtered[df_filtered['search_text'].str.contains(search_term, case=False, na=False)]
 
             df_filtered = clean_dataframe_for_display(df_filtered)
             st.dataframe(df_filtered, height=600, use_container_width=True)
