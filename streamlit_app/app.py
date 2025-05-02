@@ -31,7 +31,7 @@ def get_mongo_client():
 
 @st.cache_data(ttl=86400)
 def load_data_from_mongo():
-    client = get_mongo_client()  # This will ensure the MongoDB client is opened only once
+    client = get_mongo_client()
     try:
         db = client[MONGO_DB]
         docs = list(db[COLLECTION_NAME].find())
@@ -42,10 +42,8 @@ def load_data_from_mongo():
             return df
         else:
             return pd.DataFrame()
-    except Exception as e:
-        st.error(f"❌ Erreur de chargement des données : {str(e)}")
-        return pd.DataFrame()
-    # No client.close() here as the client is kept open during the app's lifecycle
+    finally:
+        client.close()
 
 def clean_dataframe_for_display(df):
     for col in df.columns:
@@ -102,10 +100,9 @@ def main():
 
             search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
-                df_filtered = df_filtered[
-                    df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
-                ]
-
+                # Recherche avec str.contains au lieu de apply()
+                df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
+            
             df_filtered = clean_dataframe_for_display(df_filtered)
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
@@ -140,15 +137,18 @@ def main():
 
         else:
             try:
-                client = get_mongo_client()  # Use the existing Mongo client to interact with GridFS
-                db = client[MONGO_DB]
-                fs = gridfs.GridFS(db)
-                files = list(fs.find())
-                if files:
-                    for file_data in files:
-                        st.image(file_data.read(), caption=file_data.filename)
-                else:
-                    st.warning("Aucun fichier image dans GridFS.")
+                client = get_mongo_client()
+                try:
+                    db = client[MONGO_DB]
+                    fs = gridfs.GridFS(db)
+                    files = list(fs.find())
+                    if files:
+                        for file_data in files:
+                            st.image(file_data.read(), caption=file_data.filename)
+                    else:
+                        st.warning("Aucun fichier image dans GridFS.")
+                finally:
+                    client.close()
             except Exception as e:
                 st.error(f"❌ Erreur chargement GridFS : {str(e)}")
 
