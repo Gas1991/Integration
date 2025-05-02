@@ -31,7 +31,7 @@ def get_mongo_client():
 
 @st.cache_data(ttl=86400)
 def load_data_from_mongo():
-    client = get_mongo_client()
+    client = get_mongo_client()  # This will ensure the MongoDB client is opened only once
     try:
         db = client[MONGO_DB]
         docs = list(db[COLLECTION_NAME].find())
@@ -45,7 +45,7 @@ def load_data_from_mongo():
     except Exception as e:
         st.error(f"❌ Erreur de chargement des données : {str(e)}")
         return pd.DataFrame()
-    # Do not close the client here to allow its reuse elsewhere
+    # No client.close() here as the client is kept open during the app's lifecycle
 
 def clean_dataframe_for_display(df):
     for col in df.columns:
@@ -140,7 +140,7 @@ def main():
 
         else:
             try:
-                client = get_mongo_client()
+                client = get_mongo_client()  # Use the existing Mongo client to interact with GridFS
                 db = client[MONGO_DB]
                 fs = gridfs.GridFS(db)
                 files = list(fs.find())
