@@ -2,10 +2,8 @@ import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
 import os
-from PIL import Image
-import gridfs
-from urllib.parse import quote_plus
 from datetime import datetime
+from urllib.parse import quote_plus
 
 # 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
@@ -56,7 +54,16 @@ def main():
         os.makedirs(IMAGES_DIR)
         st.warning(f"Dossier images créé : {IMAGES_DIR}")
 
-
+    st.markdown(
+        """
+        <style>
+        [data-testid="stElementToolbar"] {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
     # Chargement initial des données en session + timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
@@ -77,8 +84,8 @@ def main():
 
     df = st.session_state.df
 
-    tab1, tab2 = st.tabs(["📑 Produits", "🖼️ Images"])
-
+    tab1 = st.tabs(["📑 Produits"])[0]  # Supprimer la gestion des images (tab2)
+    
     with tab1:
         st.header("📝 Liste des Produits")
         if not df.empty:
@@ -91,57 +98,14 @@ def main():
 
             search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
-                # Recherche avec str.contains au lieu de apply()
+                # Recherche avec str.contains
                 df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
             
             df_filtered = clean_dataframe_for_display(df_filtered)
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
-            if 'special_price' in df.columns:
-                try:
-                    df['special_price'] = pd.to_numeric(df['special_price'], errors='coerce')
-                    avg_price = df['special_price'].mean(skipna=True)
-                    if pd.notnull(avg_price):
-                        st.metric("💰 Moyenne des prix", f"{avg_price:.2f} DT")
-                    else:
-                        st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
-                except Exception as e:
-                    st.error(f"Erreur moyenne : {str(e)}")
         else:
             st.warning("Aucun produit disponible.")
-
-    with tab2:
-        st.header("🖼️ Gestion des Images")
-        image_option = st.radio("📂 Source des images :", ["Local", "GridFS"])
-
-        if image_option == "Local":
-            try:
-                images = [f for f in os.listdir(IMAGES_DIR) if f.lower().endswith(('.jpg', '.png'))]
-                if images:
-                    for img_file in images:
-                        img_path = os.path.join(IMAGES_DIR, img_file)
-                        st.image(img_path, caption=img_file)
-                else:
-                    st.warning("Aucune image disponible dans le dossier local.")
-            except Exception as e:
-                st.error(f"❌ Erreur chargement images locales : {str(e)}")
-
-        else:
-            try:
-                client = get_mongo_client()
-                try:
-                    db = client[MONGO_DB]
-                    fs = gridfs.GridFS(db)
-                    files = list(fs.find())
-                    if files:
-                        for file_data in files:
-                            st.image(file_data.read(), caption=file_data.filename)
-                    else:
-                        st.warning("Aucun fichier image dans GridFS.")
-                finally:
-                    client.close()
-            except Exception as e:
-                st.error(f"❌ Erreur chargement GridFS : {str(e)}")
 
 if __name__ == "__main__":
     main()
