@@ -1,7 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
-import os
 from datetime import datetime
 from urllib.parse import quote_plus
 
@@ -11,8 +10,6 @@ password = quote_plus('RLQuuAeyYH8n3icB')
 MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
-
-IMAGES_DIR = r'D:\scarpy\mytek\crawling\images'
 
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
@@ -50,10 +47,6 @@ def clean_dataframe_for_display(df):
     return df
 
 def main():
-    if not os.path.exists(IMAGES_DIR):
-        os.makedirs(IMAGES_DIR)
-        st.warning(f"Dossier images créé : {IMAGES_DIR}")
-
     st.markdown(
         """
         <style>
@@ -84,13 +77,13 @@ def main():
 
     df = st.session_state.df
 
-    tab1 = st.tabs(["📑 Produits"])[0]  # Supprimer la gestion des images (tab2)
-    
+    tab1 = st.tabs(["📑 Produits"])[0]  # Suppression de la gestion images
+
     with tab1:
         st.header("📝 Liste des Produits")
         if not df.empty:
             columns_to_show = [
-                'sku','title','description_meta','fiche_technique', 'value_html_inner',
+                'sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner',
                 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
@@ -98,9 +91,11 @@ def main():
 
             search_term = st.text_input("🔍 Rechercher un produit", "")
             if search_term:
-                # Recherche avec str.contains
-                df_filtered = df_filtered[df_filtered.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
-            
+                # Recherche optimisée
+                combined_text = df_filtered.astype(str).agg(' '.join, axis=1)
+                mask = combined_text.str.contains(search_term, case=False, na=False)
+                df_filtered = df_filtered[mask]
+
             df_filtered = clean_dataframe_for_display(df_filtered)
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
