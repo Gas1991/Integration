@@ -32,15 +32,18 @@ def get_mongo_client():
 @st.cache_data(ttl=86400)
 def load_data_from_mongo():
     client = get_mongo_client()
-    db = client[MONGO_DB]
-    docs = list(db[COLLECTION_NAME].find())
-    if docs:
-        df = pd.json_normalize(docs)
-        if '_id' in df.columns:
-            df['_id'] = df['_id'].astype(str)
-        return df
-    else:
-        return pd.DataFrame()
+    try:
+        db = client[MONGO_DB]
+        docs = list(db[COLLECTION_NAME].find())
+        if docs:
+            df = pd.json_normalize(docs)
+            if '_id' in df.columns:
+                df['_id'] = df['_id'].astype(str)
+            return df
+        else:
+            return pd.DataFrame()
+    finally:
+        client.close()
 
 def clean_dataframe_for_display(df):
     for col in df.columns:
@@ -66,13 +69,12 @@ def main():
 
     # Chargement initial des données en session + timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
-        st.info("📦 Chargement des produits depuis DB ")
+        st.info("📦 Chargement des produits depuis DB ...")
         df = load_data_from_mongo()
         st.session_state.df = df
         st.session_state.last_update = datetime.now()
         st.success("✅ Données chargées et mises en cache.")
 
-    # Affichage date de dernière mise à jour
     st.caption(f"🕒 Dernière mise à jour : {st.session_state.last_update.strftime('%d/%m/%Y %H:%M:%S')}")
 
     if st.button("🔄 Forcer mise à jour des données DB"):
@@ -88,7 +90,6 @@ def main():
 
     with tab1:
         st.header("📝 Liste des Produits")
-
         if not df.empty:
             columns_to_show = [
                 'sku','title','description_meta','fiche_technique', 'value_html_inner',
@@ -104,7 +105,6 @@ def main():
                 ]
 
             df_filtered = clean_dataframe_for_display(df_filtered)
-
             st.dataframe(df_filtered, height=600, use_container_width=True)
 
             if 'special_price' in df.columns:
@@ -117,13 +117,11 @@ def main():
                         st.info("💰 Aucune valeur de prix valide pour calculer la moyenne.")
                 except Exception as e:
                     st.error(f"Erreur moyenne : {str(e)}")
-
         else:
             st.warning("Aucun produit disponible.")
 
     with tab2:
         st.header("🖼️ Gestion des Images")
-
         image_option = st.radio("📂 Source des images :", ["Local", "GridFS"])
 
         if image_option == "Local":
@@ -141,14 +139,17 @@ def main():
         else:
             try:
                 client = get_mongo_client()
-                db = client[MONGO_DB]
-                fs = gridfs.GridFS(db)
-                files = list(fs.find())
-                if files:
-                    for file_data in files:
-                        st.image(file_data.read(), caption=file_data.filename)
-                else:
-                    st.warning("Aucun fichier image dans GridFS.")
+                try:
+                    db = client[MONGO_DB]
+                    fs = gridfs.GridFS(db)
+                    files = list(fs.find())
+                    if files:
+                        for file_data in files:
+                            st.image(file_data.read(), caption=file_data.filename)
+                    else:
+                        st.warning("Aucun fichier image dans GridFS.")
+                finally:
+                    client.close()
             except Exception as e:
                 st.error(f"❌ Erreur chargement GridFS : {str(e)}")
 
