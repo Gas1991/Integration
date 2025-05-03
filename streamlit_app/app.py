@@ -27,18 +27,15 @@ def get_mongo_client():
 @st.cache_data(ttl=86400)
 def load_data_from_mongo():
     client = get_mongo_client()
-    try:
-        db = client[MONGO_DB]
-        docs = list(db[COLLECTION_NAME].find())
-        if docs:
-            df = pd.json_normalize(docs)
-            if '_id' in df.columns:
-                df['_id'] = df['_id'].astype(str)
-            return df
-        else:
-            return pd.DataFrame()
-    finally:
-        client.close()
+    db = client[MONGO_DB]
+    docs = list(db[COLLECTION_NAME].find())
+    if docs:
+        df = pd.json_normalize(docs)
+        if '_id' in df.columns:
+            df['_id'] = df['_id'].astype(str)
+        return df
+    else:
+        return pd.DataFrame()
 
 def clean_dataframe_for_display(df):
     for col in df.columns:
