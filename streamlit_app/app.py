@@ -43,7 +43,7 @@ def load_data_from_mongo():
 def clean_dataframe_for_display(df):
     for col in df.columns:
         if df[col].apply(lambda x: isinstance(x, (list, dict))).any():
-            df[col] = df[col].astype(str)  # Convert list or dict types to string for display
+            df.loc[:, col] = df[col].astype(str)  # Use .loc to avoid SettingWithCopyWarning
     return df
 
 def main():
