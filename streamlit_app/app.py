@@ -64,7 +64,6 @@ def check_login():
                 if login_username == VALID_USERNAME and login_password == VALID_PASSWORD:
                     st.session_state.authenticated = True
                     st.success("✅ Connexion réussie")
-                    st.experimental_rerun()
                 else:
                     st.error("❌ Identifiants incorrects.")
         return False
@@ -84,6 +83,11 @@ def main():
 
     if not check_login():
         return  # Stop here if not authenticated
+
+    # Déconnexion bouton
+    if st.button("🚪 Se déconnecter"):
+        st.session_state.authenticated = False
+        st.experimental_rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
