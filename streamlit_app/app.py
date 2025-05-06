@@ -14,7 +14,7 @@ COLLECTION_NAME = 'Produits_mytek'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# Mock user credentials (you can replace this with your own check)
+# Mock user credentials (replace with your real auth logic if needed)
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
@@ -87,7 +87,7 @@ def main():
     # Déconnexion bouton
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.experimental_rerun()
+        st.rerun()  # ✅ updated here
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
