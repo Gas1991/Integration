@@ -62,6 +62,20 @@ def main():
         display: none;
     }
     </style>
+    simple_popup_script = """
+    <script>
+    // Simple authentication logic
+    var username = prompt("Enter your username:");
+    var password = prompt("Enter your password:");
+
+    // Check credentials (you can modify these)
+    if (username === "admin" && password === "password") {
+        alert("Login successful!");
+    } else {
+        alert("Incorrect username or password.");
+        window.location.reload();  // Refresh the page to prompt again
+    }
+    </script>
     """,
     unsafe_allow_html=True
 )
