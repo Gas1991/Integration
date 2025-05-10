@@ -55,7 +55,6 @@ def main():
         }
         </style>
          <style>
-    /* Désactiver sélection texte dans les dataframes */
             .stDataFrame div {
                 user-select: none;
                 -webkit-user-select: none;
