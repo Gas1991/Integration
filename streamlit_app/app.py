@@ -48,30 +48,35 @@ def clean_dataframe_for_display(df):
 
 def main():
     st.markdown(
-        """
-        <style>
-        [data-testid="stElementToolbar"] {
-            display: none;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-        
-    )
-    st.markdown(
     """
     <style>
-    /* Désactiver sélection texte dans les dataframes */
+    /* Désactiver sélection de texte dans les dataframes */
     .stDataFrame div {
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
     }
+    /* Désactiver sélection de texte partout */
+    body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    /* Masquer la toolbar Streamlit */
+    [data-testid="stElementToolbar"] {
+        display: none;
+    }
     </style>
+    <script>
+    /* Désactiver clic droit */
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    </script>
     """,
     unsafe_allow_html=True
-    )
+)
+
 
     # Initial loading of data or timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
