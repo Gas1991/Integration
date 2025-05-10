@@ -54,16 +54,23 @@ def main():
             display: none;
         }
         </style>
-         <style>
-            .stDataFrame div {
-                user-select: none;
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-            }
-    </style>
         """,
         unsafe_allow_html=True
+        
+    )
+    st.markdown(
+    """
+    <style>
+    /* Désactiver sélection texte dans les dataframes */
+    .stDataFrame div {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
     )
 
     # Initial loading of data or timestamp
