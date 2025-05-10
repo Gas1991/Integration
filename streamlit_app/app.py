@@ -50,13 +50,6 @@ def main():
     st.markdown(
     """
     <style>
-    /* Désactiver sélection de texte dans les dataframes */
-    .stDataFrame div {
-        user-select: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-    }
     /* Désactiver sélection de texte partout */
     body {
         -webkit-user-select: none;
@@ -69,10 +62,6 @@ def main():
         display: none;
     }
     </style>
-    <script>
-    /* Désactiver clic droit */
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    </script>
     """,
     unsafe_allow_html=True
 )
