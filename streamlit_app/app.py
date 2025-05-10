@@ -62,7 +62,6 @@ def main():
         display: none;
     }
     </style>
-    simple_popup_script = """
     <script>
     // Simple authentication logic
     var username = prompt("Enter your username:");
