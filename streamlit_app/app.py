@@ -48,27 +48,15 @@ def clean_dataframe_for_display(df):
 
 def main():
     st.markdown(
-    """
-    <style>
-    textarea, input[type="text"] {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    </style>
-    <script>
-    document.addEventListener("paste", function(e) {
-        let pastedText = (e.clipboardData || window.clipboardData).getData('text');
-        if (pastedText.includes("\\n")) {
-            e.preventDefault();
-            alert("🚫 Le collage de plusieurs lignes n'est pas autorisé !");
+        """
+        <style>
+        [data-testid="stElementToolbar"] {
+            display: none;
         }
-    });
-    </script>
-    """,
-    unsafe_allow_html=True
-)
-
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
     # Initial loading of data or timestamp
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
