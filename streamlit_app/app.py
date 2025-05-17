@@ -3,6 +3,7 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote_plus
+import math
 
 # 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
@@ -14,7 +15,7 @@ COLLECTION_NAME = 'Produits_mytek'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# Mock user credentials (replace with your real auth logic if needed)
+# Mock user credentials
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
@@ -82,12 +83,11 @@ def main():
     )
 
     if not check_login():
-        return  # Stop here if not authenticated
+        return
 
-    # Déconnexion bouton
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.rerun()  # ✅ updated here
+        st.rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
@@ -106,15 +106,15 @@ def main():
         st.success("✅ Cache actualisé et données rechargées.")
 
     df = st.session_state.df
-
     tab1 = st.tabs(["📑 Produits"])[0]
 
     with tab1:
         st.header("📝 Liste des Produits")
+
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner',
-                'savoir_plus_text', 'image_url'
+                'sku', 'title', 'description_meta', 'fiche_technique',
+                'value_html_inner', 'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
@@ -126,51 +126,34 @@ def main():
                 df_filtered = df_filtered[mask]
 
             df_filtered = clean_dataframe_for_display(df_filtered)
-            
-            # Pagination
-            items_per_page = 16
-            total_items = len(df_filtered)
-            total_pages = (total_items // items_per_page) + (1 if total_items % items_per_page else 0)
-            
-            # Initialize page number in session state if it doesn't exist
-            if 'page_number' not in st.session_state:
-                st.session_state.page_number = 1
-                
-            # Page navigation controls
-            col1, col2, col3 = st.columns([1, 4, 1])
-            
+
+            # Pagination parameters
+            products_per_page = 16
+            total_products = len(df_filtered)
+            total_pages = math.ceil(total_products / products_per_page)
+
+            if 'current_page' not in st.session_state:
+                st.session_state.current_page = 1
+
+            col1, col2, col3 = st.columns([1, 2, 1])
+
             with col1:
-                if st.button("⏮️ Première page") and st.session_state.page_number > 1:
-                    st.session_state.page_number = 1
-                    
-            with col2:
-                # Display current page and total pages
-                st.write(f"Page {st.session_state.page_number} sur {total_pages}")
-                
-                # Create a slider for page navigation
-                new_page = st.slider(
-                    "Aller à la page",
-                    min_value=1,
-                    max_value=total_pages,
-                    value=st.session_state.page_number,
-                    key="page_slider",
-                    label_visibility="collapsed"
-                )
-                
-                if new_page != st.session_state.page_number:
-                    st.session_state.page_number = new_page
-                    st.rerun()
-                    
+                if st.button("⬅️ Page précédente") and st.session_state.current_page > 1:
+                    st.session_state.current_page -= 1
+
             with col3:
-                if st.button("⏭️ Dernière page") and st.session_state.page_number < total_pages:
-                    st.session_state.page_number = total_pages
-            
-            # Calculate the start and end indices for the current page
-            start_idx = (st.session_state.page_number - 1) * items_per_page
-            end_idx = min(start_idx + items_per_page, total_items)
-            
-            # Display the current page of data
-            st.dataframe(df_filtered.iloc[start_idx:end_idx], height=600, use_container_width=True)
+                if st.button("➡️ Page suivante") and st.session_state.current_page < total_pages:
+                    st.session_state.current_page += 1
+
+            # Pagination slice
+            start_idx = (st.session_state.current_page - 1) * products_per_page
+            end_idx = start_idx + products_per_page
+            df_page = df_filtered.iloc[start_idx:end_idx]
+
+            st.write(f"Page {st.session_state.current_page} sur {total_pages}")
+
+            st.dataframe(df_page, height=600, use_container_width=True)
+
         else:
             st.warning("Aucun produit disponible.")
 
