@@ -83,7 +83,7 @@ def main():
 
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.rerun()
+        st.experimental_rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
@@ -116,22 +116,28 @@ def main():
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            # Initialiser la recherche dans session_state si pas encore fait
+            # Initialiser la recherche et flag clear si pas encore dans session_state
             if 'search_term' not in st.session_state:
                 st.session_state.search_term = ""
+            if 'clear_search' not in st.session_state:
+                st.session_state.clear_search = False
 
-            # Affichage recherche + bouton Effacer
             col1, col2 = st.columns([5,1])
             with col1:
                 search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
             with col2:
                 if st.button("❌ Effacer"):
-                    st.session_state.search_term = ""
-                    st.experimental_rerun()
+                    st.session_state.clear_search = True
+
+            # Si clear_search, effacer la recherche et rerun
+            if st.session_state.clear_search:
+                st.session_state.search_term = ""
+                st.session_state.clear_search = False
+                st.experimental_rerun()
 
             st.session_state.search_term = search_term
 
-            # Filtrer si recherche
+            # Filtrer selon recherche
             if st.session_state.search_term:
                 combined_text = df_filtered.astype(str).agg(' '.join, axis=1)
                 mask = combined_text.str.contains(st.session_state.search_term, case=False, na=False)
