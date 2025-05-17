@@ -14,11 +14,9 @@ COLLECTION_NAME = 'Produits_mytek'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# Mock user credentials (replace with your real auth logic if needed)
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
-# Connect to MongoDB
 @st.cache_resource(ttl=86400)
 def get_mongo_client():
     try:
@@ -48,7 +46,6 @@ def clean_dataframe_for_display(df):
             df.loc[:, col] = df[col].astype(str)
     return df
 
-# Authentication check
 def check_login():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -119,10 +116,25 @@ def main():
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            search_term = st.text_input("🔍 Rechercher un produit", "")
-            if search_term:
+            # -- Initialisation de la recherche si pas encore définie
+            if 'search_term' not in st.session_state:
+                st.session_state.search_term = ""
+
+            # -- Champ de recherche
+            search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
+
+            # -- Bouton réinitialiser
+            if st.button("🧹 Réinitialiser la recherche"):
+                st.session_state.search_term = ""
+                st.experimental_rerun()
+
+            # -- Mettre à jour le state
+            st.session_state.search_term = search_term
+
+            # -- Filtrage si terme présent
+            if st.session_state.search_term:
                 combined_text = df_filtered.astype(str).agg(' '.join, axis=1)
-                mask = combined_text.str.contains(search_term, case=False, na=False)
+                mask = combined_text.str.contains(st.session_state.search_term, case=False, na=False)
                 df_filtered = df_filtered[mask]
 
             if not df_filtered.empty:
