@@ -15,7 +15,7 @@ COLLECTION_NAME = 'Produits_mytek'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# Mock user credentials
+# Mock user credentials (replace with your real auth logic if needed)
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
@@ -106,6 +106,7 @@ def main():
         st.success("✅ Cache actualisé et données rechargées.")
 
     df = st.session_state.df
+
     tab1 = st.tabs(["📑 Produits"])[0]
 
     with tab1:
@@ -113,8 +114,8 @@ def main():
 
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'description_meta', 'fiche_technique',
-                'value_html_inner', 'savoir_plus_text', 'image_url'
+                'sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner',
+                'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
@@ -127,32 +128,19 @@ def main():
 
             df_filtered = clean_dataframe_for_display(df_filtered)
 
-            # Pagination parameters
-            products_per_page = 16
+            # Pagination manuelle : 50 produits par page
+            products_per_page = 50
             total_products = len(df_filtered)
             total_pages = math.ceil(total_products / products_per_page)
 
-            if 'current_page' not in st.session_state:
-                st.session_state.current_page = 1
+            page_number = st.number_input("📖 Page", min_value=1, max_value=total_pages, value=1, step=1)
 
-            col1, col2, col3 = st.columns([1, 2, 1])
-
-            with col1:
-                if st.button("⬅️ Page précédente") and st.session_state.current_page > 1:
-                    st.session_state.current_page -= 1
-
-            with col3:
-                if st.button("➡️ Page suivante") and st.session_state.current_page < total_pages:
-                    st.session_state.current_page += 1
-
-            # Pagination slice
-            start_idx = (st.session_state.current_page - 1) * products_per_page
+            start_idx = (page_number - 1) * products_per_page
             end_idx = start_idx + products_per_page
-            df_page = df_filtered.iloc[start_idx:end_idx]
 
-            st.write(f"Page {st.session_state.current_page} sur {total_pages}")
+            st.write(f"📦 Affichage de {start_idx+1} à {min(end_idx, total_products)} sur {total_products} produits.")
 
-            st.dataframe(df_page, height=600, use_container_width=True)
+            st.dataframe(df_filtered.iloc[start_idx:end_idx], height=600, use_container_width=True)
 
         else:
             st.warning("Aucun produit disponible.")
