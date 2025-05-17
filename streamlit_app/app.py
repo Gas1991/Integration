@@ -83,7 +83,7 @@ def main():
 
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.rerun()
+        st.experimental_rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
