@@ -3,7 +3,6 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote_plus
-import math
 
 # 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
@@ -126,24 +125,14 @@ def main():
                 mask = combined_text.str.contains(search_term, case=False, na=False)
                 df_filtered = df_filtered[mask]
 
-            df_filtered = clean_dataframe_for_display(df_filtered)
-
-            # Pagination manuelle : 50 produits par page
-            products_per_page = 50
-            total_products = len(df_filtered)
-            total_pages = math.ceil(total_products / products_per_page)
-
-            page_number = st.number_input("📖 Page", min_value=1, max_value=total_pages, value=1, step=1)
-
-            start_idx = (page_number - 1) * products_per_page
-            end_idx = start_idx + products_per_page
-
-            st.write(f"📦 Affichage de {start_idx+1} à {min(end_idx, total_products)} sur {total_products} produits.")
-
-            st.dataframe(df_filtered.iloc[start_idx:end_idx], height=600, use_container_width=True)
-
+            if not df_filtered.empty:
+                df_filtered = clean_dataframe_for_display(df_filtered)
+                st.write(f"📦 {len(df_filtered)} produit(s) trouvé(s). Affichage des 50 premiers.")
+                st.dataframe(df_filtered.head(50), height=600, use_container_width=True)
+            else:
+                st.warning("📭 Produits non disponibles.")
         else:
-            st.warning("Aucun produit disponible.")
+            st.warning("📭 Produits non disponibles.")
 
 if __name__ == "__main__":
     main()
