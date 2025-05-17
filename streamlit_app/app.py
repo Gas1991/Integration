@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import quote_plus
 import logging
-import tornado.websocket
 
 # 🔧 Config logs : éviter les messages Tornado inutiles
 logging.getLogger("tornado.application").setLevel(logging.ERROR)
@@ -16,11 +15,11 @@ MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
 
-# Streamlit Page config
+# 📃 Streamlit Page config
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# 🔒 Auth configuration
+# 🔐 Auth configuration
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
@@ -50,10 +49,7 @@ def load_data_from_mongo():
         else:
             return pd.DataFrame()
     except Exception as e:
-        if isinstance(e, tornado.websocket.WebSocketClosedError):
-            st.warning("Connexion WebSocket fermée. Veuillez recharger la page.")
-        else:
-            st.error(f"❌ Erreur chargement données MongoDB : {str(e)}")
+        st.error(f"❌ Erreur chargement données MongoDB : {str(e)}")
         return pd.DataFrame()
 
 # 🧹 Nettoyage DataFrame avant affichage
