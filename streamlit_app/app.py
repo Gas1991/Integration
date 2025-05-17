@@ -3,6 +3,7 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote_plus
+import math
 
 # 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
@@ -14,9 +15,11 @@ COLLECTION_NAME = 'Produits_mytek'
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
+# Mock user credentials (replace with your real auth logic if needed)
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
+# Connect to MongoDB
 @st.cache_resource(ttl=86400)
 def get_mongo_client():
     try:
@@ -46,6 +49,7 @@ def clean_dataframe_for_display(df):
             df.loc[:, col] = df[col].astype(str)
     return df
 
+# Authentication check
 def check_login():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -83,7 +87,7 @@ def main():
 
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.experimental_rerun()
+        st.rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
@@ -116,41 +120,30 @@ def main():
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            # Initialiser la recherche et flag clear si pas encore dans session_state
-            if 'search_term' not in st.session_state:
-                st.session_state.search_term = ""
-            if 'clear_search' not in st.session_state:
-                st.session_state.clear_search = False
-
-            col1, col2 = st.columns([5,1])
-            with col1:
-                search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
-            with col2:
-                if st.button("❌ Effacer"):
-                    st.session_state.clear_search = True
-
-            # Si clear_search, effacer la recherche et rerun
-            if st.session_state.clear_search:
-                st.session_state.search_term = ""
-                st.session_state.clear_search = False
-                st.experimental_rerun()
-
-            st.session_state.search_term = search_term
-
-            # Filtrer selon recherche
-            if st.session_state.search_term:
+            search_term = st.text_input("🔍 Rechercher un produit", "")
+            if search_term:
                 combined_text = df_filtered.astype(str).agg(' '.join, axis=1)
-                mask = combined_text.str.contains(st.session_state.search_term, case=False, na=False)
+                mask = combined_text.str.contains(search_term, case=False, na=False)
                 df_filtered = df_filtered[mask]
 
-            if not df_filtered.empty:
-                df_filtered = clean_dataframe_for_display(df_filtered)
-                st.write(f"📦 {len(df_filtered)} produit(s) trouvé(s). Affichage des 50 premiers.")
-                st.dataframe(df_filtered.head(50), height=600, use_container_width=True)
-            else:
-                st.warning("📭 Produits non disponibles.")
+            df_filtered = clean_dataframe_for_display(df_filtered)
+
+            # Pagination manuelle : 50 produits par page
+            products_per_page = 50
+            total_products = len(df_filtered)
+            total_pages = math.ceil(total_products / products_per_page)
+
+            page_number = st.number_input("📖 Page", min_value=1, max_value=total_pages, value=1, step=1)
+
+            start_idx = (page_number - 1) * products_per_page
+            end_idx = start_idx + products_per_page
+
+            st.write(f"📦 Affichage de {start_idx+1} à {min(end_idx, total_products)} sur {total_products} produits.")
+
+            st.dataframe(df_filtered.iloc[start_idx:end_idx], height=600, use_container_width=True)
+
         else:
-            st.warning("📭 Produits non disponibles.")
+            st.warning("Aucun produit disponible.")
 
 if __name__ == "__main__":
     main()
