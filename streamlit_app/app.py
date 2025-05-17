@@ -3,10 +3,6 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime
 from urllib.parse import quote_plus
-import logging
-
-# 🔧 Config logs : éviter les messages Tornado inutiles
-logging.getLogger("tornado.application").setLevel(logging.ERROR)
 
 # 🔐 Configuration MongoDB
 username = quote_plus('ghassengharbi191')
@@ -15,15 +11,14 @@ MONGO_URI = f'mongodb+srv://{username}:{password}@cluster0.wrzdaw1.mongodb.net/?
 MONGO_DB = 'Mytek_database'
 COLLECTION_NAME = 'Produits_mytek'
 
-# 📃 Streamlit Page config
 st.set_page_config(layout="wide")
 st.title("📊 Produits Dashboard")
 
-# 🔐 Auth configuration
+# Mock user credentials (replace with your real auth logic if needed)
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "admin123"
 
-# 📡 Connexion MongoDB sécurisée
+# Connect to MongoDB
 @st.cache_resource(ttl=86400)
 def get_mongo_client():
     try:
@@ -34,32 +29,26 @@ def get_mongo_client():
         st.error(f"🔌 Erreur de connexion MongoDB : {str(e)}")
         st.stop()
 
-# 📥 Chargement des données MongoDB
 @st.cache_data(ttl=86400)
 def load_data_from_mongo():
-    try:
-        client = get_mongo_client()
-        db = client[MONGO_DB]
-        docs = list(db[COLLECTION_NAME].find())
-        if docs:
-            df = pd.json_normalize(docs)
-            if '_id' in df.columns:
-                df['_id'] = df['_id'].astype(str)
-            return df
-        else:
-            return pd.DataFrame()
-    except Exception as e:
-        st.error(f"❌ Erreur chargement données MongoDB : {str(e)}")
+    client = get_mongo_client()
+    db = client[MONGO_DB]
+    docs = list(db[COLLECTION_NAME].find())
+    if docs:
+        df = pd.json_normalize(docs)
+        if '_id' in df.columns:
+            df['_id'] = df['_id'].astype(str)
+        return df
+    else:
         return pd.DataFrame()
 
-# 🧹 Nettoyage DataFrame avant affichage
 def clean_dataframe_for_display(df):
     for col in df.columns:
         if df[col].apply(lambda x: isinstance(x, (list, dict))).any():
             df.loc[:, col] = df[col].astype(str)
     return df
 
-# 🔐 Authentification utilisateur
+# Authentication check
 def check_login():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -75,31 +64,33 @@ def check_login():
                 if login_username == VALID_USERNAME and login_password == VALID_PASSWORD:
                     st.session_state.authenticated = True
                     st.success("✅ Connexion réussie")
-                    st.experimental_rerun()
                 else:
                     st.error("❌ Identifiants incorrects.")
         return False
     return True
 
-# 🖥️ Application principale
 def main():
-    st.markdown("""
+    st.markdown(
+        """
         <style>
-        [data-testid="stElementToolbar"] { display: none; }
+        [data-testid="stElementToolbar"] {
+            display: none;
+        }
         </style>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
     if not check_login():
-        return
+        return  # Stop here if not authenticated
 
-    # 🚪 Déconnexion bouton
+    # Déconnexion bouton
     if st.button("🚪 Se déconnecter"):
         st.session_state.authenticated = False
-        st.experimental_rerun()
+        st.rerun()  # ✅ updated here
 
-    # 📦 Chargement initial des données
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
-        st.info("📦 Chargement des produits depuis la base de données...")
+        st.info("📦 Chargement des produits depuis DB ...")
         df = load_data_from_mongo()
         st.session_state.df = df
         st.session_state.last_update = datetime.now()
@@ -120,11 +111,10 @@ def main():
 
     with tab1:
         st.header("📝 Liste des Produits")
-
         if not df.empty:
             columns_to_show = [
-                'sku', 'title', 'description_meta', 'fiche_technique',
-                'value_html_inner', 'savoir_plus_text', 'image_url'
+                'sku', 'title', 'description_meta', 'fiche_technique', 'value_html_inner',
+                'savoir_plus_text', 'image_url'
             ]
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
@@ -138,8 +128,7 @@ def main():
             df_filtered = clean_dataframe_for_display(df_filtered)
             st.dataframe(df_filtered, height=600, use_container_width=True)
         else:
-            st.warning("⚠️ Aucun produit disponible.")
+            st.warning("Aucun produit disponible.")
 
-# 🚀 Lancement de l'app
 if __name__ == "__main__":
     main()
