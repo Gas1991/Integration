@@ -120,8 +120,15 @@ def main():
             if 'search_term' not in st.session_state:
                 st.session_state.search_term = ""
 
-            # Champ de recherche
-            search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
+            # Affichage recherche + bouton Effacer
+            col1, col2 = st.columns([5,1])
+            with col1:
+                search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
+            with col2:
+                if st.button("❌ Effacer"):
+                    st.session_state.search_term = ""
+                    st.experimental_rerun()
+
             st.session_state.search_term = search_term
 
             # Filtrer si recherche
