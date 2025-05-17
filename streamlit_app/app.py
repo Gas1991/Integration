@@ -82,8 +82,8 @@ def main():
         return
 
     if st.button("🚪 Se déconnecter"):
-        st.session_state.clear()
-        st.stop()
+        st.session_state.authenticated = False
+        st.rerun()
 
     if 'df' not in st.session_state or 'last_update' not in st.session_state:
         st.info("📦 Chargement des produits depuis DB ...")
@@ -116,22 +116,15 @@ def main():
             existing_columns = [col for col in columns_to_show if col in df.columns]
             df_filtered = df[existing_columns]
 
-            # -- Initialisation de la recherche si pas encore définie
+            # Initialiser la recherche dans session_state si pas encore fait
             if 'search_term' not in st.session_state:
                 st.session_state.search_term = ""
 
-            # -- Champ de recherche
+            # Champ de recherche
             search_term = st.text_input("🔍 Rechercher un produit", st.session_state.search_term)
-
-            # -- Bouton réinitialiser
-            if st.button("🧹 Réinitialiser la recherche"):
-                st.session_state.search_term = ""
-                st.experimental_rerun()
-
-            # -- Mettre à jour le state
             st.session_state.search_term = search_term
 
-            # -- Filtrage si terme présent
+            # Filtrer si recherche
             if st.session_state.search_term:
                 combined_text = df_filtered.astype(str).agg(' '.join, axis=1)
                 mask = combined_text.str.contains(st.session_state.search_term, case=False, na=False)
