@@ -3,4 +3,3 @@ pymongo
 Pillow
 streamlit
 urllib3
-tornado
